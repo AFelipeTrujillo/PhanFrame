@@ -33,14 +33,16 @@ git clone https://github.com/your-username/PhanFrame.git
 <?php
 require_once 'src/PhanFrame.php';
 require_once 'src/CsvReader.php';
+require_once 'src/GroupedPhanFrame.php';
 
-use PhanFrame\PhanFrame\PhanFrame;
+use PhanFrame\PhanFrame;
+use PhanFrame\CsvReader;
 
 // Read CSV file with automatic delimiter detection
-$df = PhanFrame::fromCsv('data.csv');
+$df = PhanFrame::fromCsv('employees.csv');
 
 // Read CSV with custom options
-$df = PhanFrame::fromCsv('data.csv', [
+$df = PhanFrame::fromCsv('sales_data.csv', [
     'delimiter' => ',',
     'headers' => true,
     'encoding' => 'UTF-8'
@@ -60,61 +62,72 @@ $head = $df->head(10);
 $tail = $df->tail(5);
 
 // Select specific columns
-$subset = $df->selectColumns(['column1', 'column2']);
+$subset = $df->selectColumns(['name', 'salary', 'department']);
 
 // Check data types
 $types = $df->dtype();
+print_r($types);
 ```
 
 ### Statistical Operations
 
 ```php
 // Calculate statistics for numeric columns
-$means = $df->mean();
-$maxValues = $df->max();
-$minValues = $df->min();
-$sums = $df->sum();
+$averageSalary = $df->mean();
+$maxSalary = $df->max();
+$minSalary = $df->min();
+$totalSalaries = $df->sum();
 
-// Count non-null values
+// Count non-null values per column
 $counts = $df->count();
+echo "Total employees: " . $counts['name'] . "\n";
 
-// Count null values
+// Count null values per column
 $nullCounts = $df->countNulls();
 ```
 
 ### Data Cleaning
 
 ```php
-// Fill null values with 0
+// Fill null salary values with 0
 $cleanedDf = $df->fillNa(0);
 
-// Fill null values with custom value
-$cleanedDf = $df->fillNa('N/A');
+// Fill null values with custom text
+$cleanedDf = $df->fillNa('Unknown');
 
-// Get unique values from a column
-$uniqueValues = $df->unique('column_name');
+// Get unique departments
+$departments = $df->unique('department');
+print_r($departments);
 ```
 
 ### Grouping and Aggregation
 
 ```php
-// Group by one or more columns
-$grouped = $df->groupBy(['category', 'region']);
+// Group by department
+$groupedByDept = $df->groupBy(['department']);
 
-// Perform aggregations on grouped data
-$sumResult = $grouped->sum('sales');
-$maxResult = $grouped->max('revenue');
-$minResult = $grouped->min('cost');
+// Calculate total salary by department
+$salaryByDept = $groupedByDept->sum('salary');
+
+// Find highest salary by department
+$maxSalaryByDept = $groupedByDept->max('salary');
+
+// Find lowest salary by department
+$minSalaryByDept = $groupedByDept->min('salary');
+
+echo $salaryByDept;
 ```
 
 ### Row Selection
 
 ```php
-// Select specific rows by index
-$selectedRows = $df->row([0, 2, 4]);
+// Select specific employees by row index
+$selectedEmployees = $df->row([0, 2, 4]);
 
-// Select a range of rows
-$rangeRows = $df->range([10, 20]);
+// Select employees from row 10 to 20
+$employeeRange = $df->range([10, 20]);
+
+echo $selectedEmployees;
 ```
 
 ## API Reference
@@ -168,50 +181,70 @@ $rangeRows = $df->range([10, 20]);
 
 ## Examples
 
-### Working with Sales Data
+### Working with Employee Data
 
 ```php
-// Load sales data
-$sales = PhanFrame::fromCsv('sales_data.csv');
+use PhanFrame\PhanFrame;
+
+// Load employee data
+$employees = PhanFrame::fromCsv('employees.csv');
 
 // View basic information
-echo "Data shape: " . count($sales->head(1)) . " columns\n";
+echo "Number of columns: " . count($employees->head(1)) . "\n";
 echo "Data types:\n";
-print_r($sales->dtype());
+print_r($employees->dtype());
 
-// Calculate monthly statistics
-$monthlyStats = $sales->groupBy(['month'])->sum('revenue');
+// Calculate department statistics
+$deptStats = $employees->groupBy(['department'])->sum('salary');
+echo "Total salary by department:\n";
+echo $deptStats;
 
-// Find top performing regions
-$regionStats = $sales->groupBy(['region'])
-                    ->sum('sales')
-                    ->selectColumns(['region', 'sales']);
+// Find highest paid employees by department
+$maxSalaries = $employees->groupBy(['department'])->max('salary');
 
 // Clean and prepare data
-$cleanSales = $sales->fillNa(0)
-                   ->selectColumns(['date', 'product', 'revenue', 'quantity']);
+$cleanEmployees = $employees->fillNa(0)
+                           ->selectColumns(['name', 'department', 'salary', 'hire_date']);
 ```
 
-### Data Analysis Workflow
+### Complete Data Analysis Workflow
 
 ```php
+use PhanFrame\PhanFrame;
+
 // 1. Load data
-$df = PhanFrame::fromCsv('dataset.csv');
+$df = PhanFrame::fromCsv('company_data.csv');
 
 // 2. Explore data structure
 $head = $df->head();
+echo "First 5 rows:\n";
+echo $df;
+
 $types = $df->dtype();
+echo "Data types:\n";
+print_r($types);
+
 $nulls = $df->countNulls();
+echo "Missing values per column:\n";
+print_r($nulls);
 
 // 3. Clean data
 $clean_df = $df->fillNa(0);
+echo "Data cleaned - null values filled with 0\n";
 
 // 4. Analyze by groups
 $grouped = $clean_df->groupBy(['category']);
-$summary = $grouped->sum('amount');
+$summary = $grouped->sum('revenue');
+echo "Revenue by category:\n";
+echo $summary;
 
-// 5. Export results
-// (Additional export methods would be implemented as needed)
+// 5. Get insights
+$uniqueCategories = $clean_df->unique('category');
+echo "Available categories:\n";
+print_r($uniqueCategories);
+
+$totalRevenue = $clean_df->sum();
+echo "Total revenue: " . $totalRevenue['revenue'] . "\n";
 ```
 
 ## Contributing
