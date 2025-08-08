@@ -69,7 +69,7 @@ class CsvReader
             throw new InvalidArgumentException("CSV file is empty or invalid: $filePath");
         }
 
-        return new DataFrame($data);
+        return new PhanFrame($data);
     }
 
     /**
